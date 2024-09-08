@@ -1,0 +1,55 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main  # This workflow runs when there's a push to the main branch
+  pull_request:
+    branches:
+      - main  # This workflow also runs on pull requests targeting the main branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Go environment
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+
+      # Step 3: Build the Go binary
+      - name: Build Go app
+        run: |
+          go mod tidy
+          go build -o prometheus-qbittorrent-exporter
+
+      # Step 4: Set up Docker Buildx (for multi-platform builds)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 5: Log in to the GitHub Container Registry (GHCR)
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Step 6: Build and push the Docker image to GHCR
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .  # Use the current directory for Docker build context
+          platforms: linux/amd64,linux/arm64  # Build for multiple platforms
+          push: true  # Push the image to the registry
+          tags: ghcr.io/jgrancell/prometheus-qbittorrent-exporter:latest  # Tag the Docker image
+
+      # Step 7: Verify the image has been pushed
+      - name: Verify image push
+        run: echo "Docker image pushed successfully to GitHub Container Registry."
