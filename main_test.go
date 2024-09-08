@@ -16,14 +16,14 @@ const mockAPIResponse = `
     {
         "name": "Torrent 1",
         "state": "uploading",
-        "tracker": "https://tracker1.example.com/announce/foobar",
+        "tracker": "https://tracker1.example.com/announce",
         "ratio": 1.5,
         "uploaded": 104857600
     },
     {
         "name": "Torrent 2",
         "state": "pausedUP",
-        "tracker": "https://tracker2.example.com/announce/fizzbuzz",
+        "tracker": "https://tracker2.example.com/announce",
         "ratio": 0.8,
         "uploaded": 52428800
     }
@@ -94,8 +94,14 @@ func TestScrapeQbittorrentAPI(t *testing.T) {
 	server := mockQbittorrentServer()
 	defer server.Close()
 
+	// Set environment variables for the test
+	os.Setenv("QBITTORRENT_HOSTNAME", server.URL[7:]) // Remove "http://"
+	os.Setenv("QBITTORRENT_API_PROTOCOL", "http")
+	os.Setenv("QBITTORRENT_USERNAME", "user")
+	os.Setenv("QBITTORRENT_PASSWORD", "pass")
+
 	// Perform the scrape
-	scrapeQbittorrentAPI("http", server.URL[7:]) // Use mocked server's hostname
+	scrapeQbittorrentAPI("http", server.URL[7:], "user", "pass")
 
 	// Gather the metrics from the custom registry
 	metrics, err := registry.Gather()
@@ -134,13 +140,15 @@ func TestMainLoopSingleScrape(t *testing.T) {
 	server := mockQbittorrentServer()
 	defer server.Close()
 
-	// Override environment variables
+	// Set environment variables for the test
 	os.Setenv("QBITTORRENT_HOSTNAME", server.URL[7:])
 	os.Setenv("QBITTORRENT_API_PROTOCOL", "http")
 	os.Setenv("QBITTORRENT_RECHECK_INTERVAL", "1")
+	os.Setenv("QBITTORRENT_USERNAME", "user")
+	os.Setenv("QBITTORRENT_PASSWORD", "pass")
 
 	// Directly call the scraper instead of relying on the loop
-	scrapeQbittorrentAPI("http", server.URL[7:])
+	scrapeQbittorrentAPI("http", server.URL[7:], "user", "pass")
 
 	// Gather the metrics from the custom registry
 	metrics, err := registry.Gather()

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,8 +15,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-// Define Prometheus metrics with an additional label for the host name
 var (
+	// Define Prometheus metrics
 	torrentStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "qbittorrent_torrent_status",
@@ -57,22 +58,27 @@ type Torrent struct {
 	Uploaded  int64   `json:"uploaded"` // Data uploaded in bytes
 }
 
-// Extract just the hostname from the tracker URL
-func getTrackerHostname(trackerURL string) string {
-	parsedURL, err := url.Parse(trackerURL)
-	if err != nil {
-		log.Printf("Error parsing tracker URL: %v", err)
-		return trackerURL // fallback to full tracker URL in case of error
-	}
-	return parsedURL.Hostname()
+// Create the Basic Auth header
+func createBasicAuthHeader(username, password string) string {
+	auth := username + ":" + password
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
 }
 
 // Scrape data from Qbittorrent API
-func scrapeQbittorrentAPI(protocol, hostname string) {
-	// Build the API URL using the protocol and hostname
-	qbittorrentAPIURL := fmt.Sprintf("%s://%s/api/v2/torrents/info", protocol, hostname)
+func scrapeQbittorrentAPI(protocol, hostname, username, password string) {
+	client := &http.Client{Timeout: 10 * time.Second}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s://%s/api/v2/torrents/info", protocol, hostname), nil)
+	if err != nil {
+		log.Printf("Error creating request to Qbittorrent API: %v", err)
+		return
+	}
 
-	resp, err := http.Get(qbittorrentAPIURL)
+	// Add Basic Auth header if credentials are provided
+	if username != "" && password != "" {
+		req.Header.Add("Authorization", createBasicAuthHeader(username, password))
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error getting data from Qbittorrent API: %v", err)
 		return
@@ -96,44 +102,52 @@ func scrapeQbittorrentAPI(protocol, hostname string) {
 		if torrent.State == "uploading" || torrent.State == "stalledUP" {
 			stateValue = 1.0
 		}
-
-		// Use only the tracker hostname
-		trackerHostname := getTrackerHostname(torrent.Tracker)
-
-		torrentStatus.WithLabelValues(hostname, torrent.Name, trackerHostname, torrent.State).Set(stateValue)
-		torrentSeeded.WithLabelValues(hostname, torrent.Name, trackerHostname).Set(torrent.SeedRatio)
-		torrentUploaded.WithLabelValues(hostname, torrent.Name, trackerHostname).Set(float64(torrent.Uploaded))
+		torrentStatus.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker), torrent.State).Set(stateValue)
+		torrentSeeded.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker)).Set(torrent.SeedRatio)
+		torrentUploaded.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker)).Set(float64(torrent.Uploaded))
 	}
 }
 
+// Helper to extract hostname from tracker URL
+func getTrackerHostname(trackerURL string) string {
+	parsedURL, err := url.Parse(trackerURL)
+	if err != nil {
+		log.Printf("Error parsing tracker URL: %v", err)
+		return trackerURL // fallback to full tracker URL in case of error
+	}
+	return parsedURL.Hostname()
+}
+
 func main() {
-	// Get the Qbittorrent host name from an environment variable
+	// Get Qbittorrent hostname and credentials from environment variables
 	hostname := os.Getenv("QBITTORRENT_HOSTNAME")
 	if hostname == "" {
 		log.Fatal("QBITTORRENT_HOSTNAME environment variable not set")
 	}
 
-	// Default to using https unless the environment variable explicitly sets http
-	protocol := "https"
-	if os.Getenv("QBITTORRENT_API_PROTOCOL") == "http" {
-		protocol = "http"
+	protocol := os.Getenv("QBITTORRENT_API_PROTOCOL")
+	if protocol == "" {
+		protocol = "https" // Default to https
 	}
+
+	username := os.Getenv("QBITTORRENT_USERNAME")
+	password := os.Getenv("QBITTORRENT_PASSWORD")
 
 	// Get the recheck interval from an environment variable, default to 30 seconds if not set
 	recheckIntervalStr := os.Getenv("QBITTORRENT_RECHECK_INTERVAL")
 	recheckInterval, err := strconv.Atoi(recheckIntervalStr)
 	if err != nil || recheckInterval <= 0 {
-		recheckInterval = 30 // default to 30 seconds
+		recheckInterval = 30 // Default to 30 seconds
 	}
 	recheckDuration := time.Duration(recheckInterval) * time.Second
 
 	// Set up Prometheus metrics endpoint
 	http.Handle("/metrics", promhttp.Handler())
 
-	// Scrape Qbittorrent API at the configured interval
+	// Scrape Qbittorrent API every configured interval
 	go func() {
 		for {
-			scrapeQbittorrentAPI(protocol, hostname)
+			scrapeQbittorrentAPI(protocol, hostname, username, password)
 			time.Sleep(recheckDuration)
 		}
 	}()
