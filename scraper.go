@@ -42,6 +42,7 @@ func QbittorrentScrape(server *QbittorrentServer) error {
 			Tracker:  torrent.Tracker,
 			Ratio:    torrent.Ratio,
 			Uploaded: torrent.Uploaded,
+			Size:     torrent.Size,
 		}
 		torrents = append(torrents, t)
 	}

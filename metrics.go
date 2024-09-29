@@ -19,8 +19,16 @@ var (
 
 	torrentSeeded = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "qbittorrent_torrent_seed_ratio",
+			Name: "qbittorrent_torrent_ratio",
 			Help: "Seed ratio of torrents.",
+		},
+		[]string{"host", "name", "tracker"},
+	)
+
+	torrentSize = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "qbittorrent_torrent_size_bytes",
+			Help: "Size of the torrent's data, in bytes",
 		},
 		[]string{"host", "name", "tracker"},
 	)
@@ -53,5 +61,6 @@ func updateMetrics(hostname string, torrents []Torrent) {
 		torrentStatus.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker), torrent.State).Set(stateValue)
 		torrentSeeded.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker)).Set(torrent.Ratio)
 		torrentUploaded.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker)).Set(float64(torrent.Uploaded))
+		torrentSize.WithLabelValues(hostname, torrent.Name, getTrackerHostname(torrent.Tracker)).Set(float64(torrent.Size))
 	}
 }

@@ -22,6 +22,7 @@ func init() {
 	prometheus.MustRegister(torrentStatus)
 	prometheus.MustRegister(torrentSeeded)
 	prometheus.MustRegister(torrentUploaded)
+	prometheus.MustRegister(torrentSize)
 }
 
 // Torrent structure to parse Qbittorrent API response
@@ -31,6 +32,7 @@ type Torrent struct {
 	Tracker  string  `json:"tracker"`
 	Ratio    float64 `json:"ratio"`
 	Uploaded int64   `json:"uploaded"` // Data uploaded in bytes
+	Size     int64   `json:"size"`
 }
 
 func main() {
