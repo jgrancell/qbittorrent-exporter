@@ -8,8 +8,8 @@ on:
 
 env:
   IMAGE_REGISTRY: ghcr.io
-  IMAGE_REPOSITORY: ${{ env.IMAGE_REGISTRY }}/${{ github.repository }}
-  IMAGE_NAME: ${{ env.IMAGE_REPOSITORY }}/exporter
+  IMAGE_REPOSITORY: ghcr.io/jgrancell/prometheus-qbittorrent-exporter
+  IMAGE_NAME: ghcr.io/jgrancell/prometheus-qbittorrent-exporter
   IMAGE_TAG: dev
   REGISTRY_USERNAME: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
