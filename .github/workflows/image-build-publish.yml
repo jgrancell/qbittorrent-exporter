@@ -18,14 +18,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Registry Login
-      id: login
-      uses: redhat-actions/podman-login@v1
-      with:
-        registry: ${{ env.IMAGE_REGISTRY }}
-        username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Build Image
       id: buildah
@@ -42,6 +34,9 @@ jobs:
       with:
         image: ${{ steps.buildah.outputs.image }}
         tags: ${{ steps.buildah.outputs.tags }}
+        registry: ${{ env.IMAGE_REGISTRY }}
+        username: ${{ env.REGISTRY_USERNAME }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
