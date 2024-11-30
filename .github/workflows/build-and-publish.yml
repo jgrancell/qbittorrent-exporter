@@ -7,11 +7,11 @@ on:
     - main
 
 env:
-  IMAGE_NAME: prometheus-qbittorrent-exporter
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
   IMAGE_TAGS: dev
-  IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
   REGISTRY_USER: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ github.token }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build-and-push:
@@ -33,17 +33,17 @@ jobs:
       with:
         image: ${{ env.IMAGE_NAME }}
         tags: ${{ env.IMAGE_TAGS }}
+        oci: true
         containerfiles: |
           ./Containerfile
-        oci: true
 
     - name: Login
       id: login
       uses: redhat-actions/podman-login@v1
       with:
-        registry: ${{ env.IMAGE_REGISTRY }}
+        registry: ${{ env.REGISTRY }}
         username: ${{ env.REGISTRY_USER }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ env.REGISTRY_PASSWORD }}
     
     - name: Publish Image
       id: publish
@@ -51,12 +51,16 @@ jobs:
       with:
         image: ${{ steps.build.outputs.image }}
         tags: ${{ steps.build.outputs.tags }}
-        registry: ${{ env.IMAGE_REGISTRY }}
+        registry: ${{ env.REGISTRY }}
         extra-args: |
           --disable-content-trust
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.outputs.registry-paths }}"
 
-    - name: Output Digest
-      run: echo "${{ steps.publish.outputs.digest}}"
+    - name: Generate artifact attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
+        subject-digest: ${{ steps.publish.outputs.digest }}
+        push-to-registry: true
