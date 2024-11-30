@@ -31,7 +31,7 @@ jobs:
       id: buildah
       uses: redhat-actions/buildah-build@v2
       with: 
-        image: ${{ env.IMAGE_NAME }}
+        image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: ${{ github.ref_name }}
         containerfiles: |
           ./Containerfile
