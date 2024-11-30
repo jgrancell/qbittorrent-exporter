@@ -13,7 +13,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  dev-build-publish:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
@@ -32,11 +32,11 @@ jobs:
       id: publish
       uses: redhat-actions/push-to-registry@v2
       with:
-        image: ${{ steps.buildah.outputs.image }}
-        tags: ${{ steps.buildah.outputs.tags }}
-        registry: ${{ env.IMAGE_REGISTRY }}
         username: ${{ env.REGISTRY_USERNAME }}
         password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ${{ env.IMAGE_REGISTRY }}
+        image: ${{ steps.buildah.outputs.image }}
+        tags: ${{ steps.buildah.outputs.tags }}
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
