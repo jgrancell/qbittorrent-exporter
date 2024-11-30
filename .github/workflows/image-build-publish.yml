@@ -8,9 +8,11 @@ on:
 
 env:
   IMAGE_REGISTRY: ghcr.io
+  IMAGE_REPOSITORY: ${{ env.IMAGE_REGISTRY }}/${{ github.repository }}
+  IMAGE_NAME: ${{ env.IMAGE_REPOSITORY }}/exporter
+  IMAGE_TAG: dev
   REGISTRY_USERNAME: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ github.token }}
-  IMAGE_NAME: ${{ github.repository }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
   build-and-push:
@@ -18,13 +20,18 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      
+
+    - name: Build Image
+      id: build
+      run: |
+        make image
+        
     - name: Build Image
       id: buildah
       uses: redhat-actions/buildah-build@v2
       with: 
-        image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
-        tags: ${{ github.ref_name }}
+        image: ${{ env.IMAGE_REPOSITORY }}
+        tags: ${{ env.IMAGE_TAG }}
         containerfiles: |
           ./Containerfile
     
@@ -33,10 +40,10 @@ jobs:
       uses: redhat-actions/push-to-registry@v2
       with:
         username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ env.REGISTRY_PASSWORD }}
         registry: ${{ env.IMAGE_REGISTRY }}
-        image: ${{ steps.buildah.outputs.image }}
-        tags: ${{ steps.buildah.outputs.tags }}
+        image: ${{ env.IMAGE_NAME }}
+        tags: ${{ env.IMAGE_TAG }}
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
