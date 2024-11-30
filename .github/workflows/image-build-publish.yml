@@ -25,7 +25,7 @@ jobs:
       with:
         registry: ${{ env.IMAGE_REGISTRY }}
         username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ env.REGISTRY_PASSWORD }}
+        password: ${{ secrets.GITHUB_TOKEN }}
       
     - name: Build Image
       id: buildah
