@@ -31,7 +31,7 @@ jobs:
       id: buildah
       uses: redhat-actions/buildah-build@v2
       with: 
-        image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+        image: ${{ env.IMAGE_NAME }}
         tags: ${{ github.ref_name }}
         containerfiles: |
           ./Containerfile
@@ -42,6 +42,7 @@ jobs:
       with:
         image: ${{ steps.buildah.outputs.image }}
         tags: ${{ steps.buildah.outputs.tags }}
+        registry: ${{ env.IMAGE_REGISTRY }}
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
