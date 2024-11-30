@@ -19,6 +19,7 @@ RUN go build -o prometheus-qbittorrent-exporter
 
 # Stage 2: Create the final container image
 FROM alpine:3.16
+LABEL org.opencontainers.image.source = "https://github.com/jgrancell/prometheus-qbittorrent-exporter" 
 
 # Install certificates for HTTPS connections
 RUN apk add --no-cache ca-certificates
