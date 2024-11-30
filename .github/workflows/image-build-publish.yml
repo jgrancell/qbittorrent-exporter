@@ -1,0 +1,47 @@
+name: Build & Publish Development Image
+
+on:
+  push:
+    tags: [ "v*.**" ]
+    branches:
+    - main
+
+env:
+  IMAGE_REGISTRY: ghcr.io
+  REGISTRY_USERNAME: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ github.token }}
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  dev-build-publish:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Registry Login
+      id: login
+      uses: redhat-actions/podman-login@v1
+      with:
+        registry: ${{ env.IMAGE_REGISTRY }}
+        username: ${{ env.REGISTRY_USERNAME }}
+        password: ${{ env.REGISTRY_PASSWORD }}
+      
+    - name: Build Image
+      id: buildah
+      uses: redhat-actions/buildah-build@v2
+      with: 
+        image: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: ${{ github.ref_name }}
+        containerfiles: |
+          ./Containerfile
+    
+    - name: Publish Image
+      id: publish
+      uses: redhat-actions/push-to-registry@v2
+      with:
+        image: ${{ steps.buildah.outputs.image }}
+        tags: ${{ steps.buildah.outputs.tags }}
+    
+    - name: Output Image Location
+      run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
