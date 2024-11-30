@@ -6,14 +6,6 @@ on:
     branches:
     - main
 
-env:
-  IMAGE_REGISTRY: ghcr.io
-  IMAGE_REPOSITORY: ghcr.io/jgrancell/prometheus-qbittorrent-exporter
-  IMAGE_NAME: ghcr.io/jgrancell/prometheus-qbittorrent-exporter
-  IMAGE_TAG: dev
-  REGISTRY_USERNAME: ${{ github.actor }}
-  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -25,20 +17,21 @@ jobs:
       id: buildah
       uses: redhat-actions/buildah-build@v2
       with: 
-        image: ${{ env.IMAGE_REPOSITORY }}
-        tags: ${{ env.IMAGE_TAG }}
+        image: ${{ github.repository}}
+        tags: dev
         containerfiles: |
           ./Containerfile
+        oci: true
     
     - name: Publish Image
       id: publish
       uses: redhat-actions/push-to-registry@v2
       with:
-        username: ${{ env.REGISTRY_USERNAME }}
-        password: ${{ env.REGISTRY_PASSWORD }}
-        registry: ${{ env.IMAGE_REGISTRY }}
-        image: ${{ env.IMAGE_NAME }}
-        tags: ${{ env.IMAGE_TAG }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        registry: ghcr.io
+        image: ${{ github.repository }}
+        tags: dev
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
