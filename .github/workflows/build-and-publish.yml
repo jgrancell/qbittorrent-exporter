@@ -29,6 +29,14 @@ jobs:
         containerfiles: |
           ./Containerfile
         oci: true
+
+    - name: Login
+      id: login
+      uses: redhat-actions/podman-login@v1
+      with:
+        registry: ${{ env.IMAGE_REGISTRY }}
+        username: ${{ env.REGISTRY_USER }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Publish Image
       id: publish
@@ -37,8 +45,6 @@ jobs:
         image: ${{ steps.build.outputs.image }}
         tags: ${{ steps.build.outputs.tags }}
         registry: ${{ env.IMAGE_REGISTRY }}
-        username: ${{ env.REGISTRY_USER }}
-        password: ${{ secrets.GITHUB_TOKEN }}
         extra-args: |
           --disable-content-trust
     
