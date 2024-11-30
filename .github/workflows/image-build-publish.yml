@@ -42,7 +42,6 @@ jobs:
       with:
         image: ${{ steps.buildah.outputs.image }}
         tags: ${{ steps.buildah.outputs.tags }}
-        registry: ${{ env.IMAGE_REGISTRY }}
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
