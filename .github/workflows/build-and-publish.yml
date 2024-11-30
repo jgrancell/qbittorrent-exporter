@@ -7,9 +7,9 @@ on:
     - main
 
 env:
-  REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   IMAGE_TAGS: dev
+  REGISTRY: ghcr.io
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,14 +36,6 @@ jobs:
         oci: true
         containerfiles: |
           ./Containerfile
-
-    - name: Login
-      id: login
-      uses: redhat-actions/podman-login@v1
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ env.REGISTRY_USER }}
-        password: ${{ env.REGISTRY_PASSWORD }}
     
     - name: Publish Image
       id: publish
@@ -52,6 +44,8 @@ jobs:
         image: ${{ steps.build.outputs.image }}
         tags: ${{ steps.build.outputs.tags }}
         registry: ${{ env.REGISTRY }}
+        username: ${{ env.REGISTRY_USER }}
+        password: ${{ env.REGISTRY_PASSWORD }}
         extra-args: |
           --disable-content-trust
     
