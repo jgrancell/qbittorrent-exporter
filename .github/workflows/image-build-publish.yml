@@ -20,11 +20,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Build Image
-      id: build
-      run: |
-        make image
         
     - name: Build Image
       id: buildah
