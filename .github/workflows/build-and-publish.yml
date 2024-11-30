@@ -16,6 +16,13 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -49,4 +56,7 @@ jobs:
           --disable-content-trust
     
     - name: Output Image Location
-      run: echo "Image published to ${{ steps.publish.output.registry-paths }}"
+      run: echo "Image published to ${{ steps.publish.outputs.registry-paths }}"
+
+    - name: Output Digest
+      run: echo "${{ steps.publish.outputs.digest}}"
