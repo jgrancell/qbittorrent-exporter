@@ -14,22 +14,6 @@ env:
   REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
 
 jobs:
-  configure-tags:
-    name: Gather job information
-    runs-on: ubuntu-22.04
-    outputs:
-      image-tag: ${{ steps.image.outputs.tag }}
-      latest: ${{ steps.image.outputs.latest }}
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Set image tags
-        run: |
-          if test "${{ github.ref_type }}" == "tag"; then
-            echo "tag=${{ github.ref_name}}" >> "$GITHUB_OUTPUT"
-            echo "latest=yes" >> "$GITHUB_OUTPUT"
-          elsif test
   build-and-push:
     runs-on: ubuntu-latest
 
