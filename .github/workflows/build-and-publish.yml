@@ -42,8 +42,15 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Registry Login
+      uses: redhat-actions/podman-login@v1
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ env.REGISTRY_USER }}
+        password: ${{ env.REGISTRY_PASSWORD }}
         
-    - name: Build Tagged Image
+    - name: Build Image
       id: build-tag
       uses: redhat-actions/buildah-build@v2
       with:
@@ -53,22 +60,20 @@ jobs:
         containerfiles: |
           ./Containerfile
     
-    - name: Publish Tagged Image
+    - name: Publish Image
       id: publish-tag
       uses: redhat-actions/push-to-registry@v2
       with:
         image: ${{ steps.build-tag.outputs.image }}
         tags: ${{ steps.build-tag.outputs.tags }}
         registry: ${{ env.REGISTRY }}
-        username: ${{ env.REGISTRY_USER }}
-        password: ${{ env.REGISTRY_PASSWORD }}
         extra-args: |
           --disable-content-trust
     
     - name: Output Image Location
       run: echo "Image published to ${{ steps.publish.outputs.registry-paths }}"
 
-    - name: Generate Tagged Build Attestation
+    - name: Generate Build Attestation
       uses: actions/attest-build-provenance@v1
       with:
         subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME}}
